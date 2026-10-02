@@ -7,12 +7,12 @@ Your application already has users, a database, a login page and a deployment. W
 Declare a tenant, say where the keys are sealed, register a client:
 
 ```yaml
-heidi:
+beffroi:
     tenant:
         issuer: 'https://id.example.com'
     keys:
         kms: op                     # a KMS client of the framework configuration
-        key_id: 'heidi-{tenant}'
+        key_id: 'beffroi-{tenant}'
     clients:
         my-app:
             secret: '%env(MY_APP_SECRET)%'
@@ -37,7 +37,7 @@ The pages are Twig templates you override. The rest is services you can replace.
 | **FAPI 2** | Pushed authorization requests, signed request objects, signed authorization responses (JARM), DPoP, mTLS client authentication and certificate-bound tokens, ID token and UserInfo encrypted to the client, `PS256`, `ES256` and `EdDSA` |
 | **Logout** | RP-initiated, front-channel, back-channel with retries, and a session that ends for every client at once |
 | **Keys** | One key per tenant, sealed by a KMS (sodium, a key file, Vault Transit, AWS KMS), rotation with no downtime and no client left behind, a JWK Set carrying the signing and the encryption keys |
-| **In your project** | Doctrine entities and migrations, console commands (`heidi:keys:rotate`, `heidi:user:create`, `heidi:keys:list --check`), a Symfony profiler panel that shows what came in, what was decided and what went out |
+| **In your project** | Doctrine entities and migrations, console commands (`beffroi:keys:rotate`, `beffroi:user:create`, `beffroi:keys:list --check`), a Symfony profiler panel that shows what came in, what was decided and what went out |
 
 ## Why this rather than a second stack
 
