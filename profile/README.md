@@ -1,63 +1,42 @@
 # The OpenID Connect provider that PHP world deserves
 
-Your application already has users, a database, a login page and a deployment. What it does not have is the piece that speaks OAuth 2.0 and OpenID Connect to everything else, and the usual answer is a second stack to run: Keycloak, Auth0, Entra. This is that piece, in PHP, deployed with your application, with your users in your database and your login page in Twig.
+On the map of a Symfony application, the interface is Symfony, the API is API Platform, and the identity provider is always somewhere else: Keycloak, Auth0, Entra. Beffroi is that provider, written in PHP: OAuth 2.0, OpenID Connect and SAML 2.0 on a pure-PHP core, under MIT.
 
-## What it looks like
+It runs as an application of its own, beside the applications it signs people in to. They are its clients and talk to it through the protocols; none of them installs it. A deployment is one image, `ghcr.io/beffroi-auth/beffroi`: Symfony on FrankenPHP, PostgreSQL behind it, set by its environment.
 
-Declare a tenant, say where the keys are sealed, register a client:
-
-```yaml
-beffroi:
-    tenant:
-        issuer: 'https://id.example.com'
-    keys:
-        kms: op                     # a KMS client of the framework configuration
-        key_id: 'beffroi-{tenant}'
-    clients:
-        my-app:
-            secret: '%env(MY_APP_SECRET)%'
-            redirect_uris: ['https://app.example.com/login/check']
-```
-
-The application then serves a provider any OpenID Connect client can discover and use:
-
-```
-/.well-known/openid-configuration   /jwks   /authorize   /token   /userinfo
-/introspect   /revoke   /par   /login   /consent   /logout
-```
-
-The pages are Twig templates you override. The rest is services you can replace.
-
-## What is in the box
+## What it serves
 
 | | |
 |---|---|
-| **Sign-in** | Passkeys as a first factor (WebAuthn, FIDO metadata verified), passwords with typed hashes, TOTP with backup codes, attempts limited per user, step-up decided per user, `acr` and `amr` that say what was actually proved |
-| **Tokens** | Authorization code with PKCE `S256`, `at+jwt` or opaque per client, refresh token rotation, revocation, introspection, introspection responses signed for a resource server that verifies them |
-| **FAPI 2** | Pushed authorization requests, signed request objects, signed authorization responses (JARM), DPoP, mTLS client authentication and certificate-bound tokens, ID token and UserInfo encrypted to the client, `PS256`, `ES256` and `EdDSA` |
-| **Logout** | RP-initiated, front-channel, back-channel with retries, and a session that ends for every client at once |
-| **Keys** | One key per tenant, sealed by a KMS (sodium, a key file, Vault Transit, AWS KMS), rotation with no downtime and no client left behind, a JWK Set carrying the signing and the encryption keys |
-| **In your project** | Doctrine entities and migrations, console commands (`beffroi:keys:rotate`, `beffroi:user:create`, `beffroi:keys:list --check`), a Symfony profiler panel that shows what came in, what was decided and what went out |
+| **Sign-in** | Passwords with typed hashes, passkeys as a first factor, TOTP and backup codes, `acr` and `amr` that say what was proved |
+| **OAuth 2.0 and OpenID Connect** | Authorization code with PKCE `S256`, refresh tokens, client credentials, device code, CIBA, token exchange, JWT bearer; introspection, revocation, discovery, UserInfo, dynamic client registration, pairwise subjects |
+| **FAPI 2.0** | Pushed authorization requests, signed request objects, signed authorization responses, DPoP and mutual TLS, tokens encrypted to the client |
+| **Logout** | RP-initiated, front-channel and back-channel |
+| **SAML 2.0** | The identity provider of the applications that speak SAML, and the service provider of the identity provider of an organisation, with single logout |
+| **Keys** | The keys of each tenant sealed by a key management service: a sodium key, Vault Transit or AWS KMS |
+| **Administration** | An administration API, and a terminal client that uses it |
 
-## Why this rather than a second stack
+## Secure by default
 
-- **One deployment, one language.** The provider runs in the application you already deploy, debugged with the tools you already use, on the PHP version you already run.
-- **Your users stay yours.** The provider owns its identity model instead of hooking into your `User` entity, so nothing of your application is bent to fit it, and nothing holds your users hostage.
-- **No way to do it wrong.** PKCE `S256` required, no implicit flow, no password grant, exact redirect URI match, an `iss` in every authorization response. There is no `insecure_*` option to copy from a tutorial; where an exception is unavoidable it is named, carried by one client, and bounded.
+There is no option to do it wrong: no implicit flow, no password grant, PKCE with `S256` only, redirect URIs compared exactly, `iss` in every authorization response. Where an exception is unavoidable, it is named, carried by one client, and bounded.
 
-If what you need is a directory, a federation hub and an administration console for the whole company, Keycloak is a good answer. If what you need is your application to be its own identity provider, this is that.
+## Judged from outside
 
-## How we know it works
+The certification plans of the OpenID Foundation conformance suite run against the provider in continuous integration, in strict mode: Basic, Config and Form Post OP; RP-Initiated, Front-Channel and Back-Channel Logout; FAPI 2.0 Security and Signing, with DPoP and with mutual TLS; FAPI-CIBA; Dynamic OP, Third Party-Init OP and Rotate Keys. Symfony's own `oidc_login` client consumes the provider without a patch.
 
-The OpenID Foundation conformance suite runs in continuous integration, plan by plan, on every change: Basic OP, Config OP, Form Post Basic OP, RP-Initiated Logout, Front-Channel and Back-Channel Logout are green, and the two FAPI 2 plans run in their four variants. Symfony's own `oidc_login` client consumes the provider without a patch, and every limit found on the way is proposed upstream rather than worked around here.
+SAML 2.0 has no certification programme, so its judges are tools and implementations that are not ours: xmlsec1, SimpleSAMLphp, Microsoft Entra ID and Keycloak.
 
-Green is what a run says on a date, with the run to open. The certification itself, the mark and the listing, is a separate step and it has not been taken.
+Beffroi is not OpenID Certified. Running the suite and holding the mark are two different things.
 
 ## Where things stand
 
-The provider runs and is judged, plan by plan. It is not released: the repositories are private while that work is finished, and they open under MIT with the first release. What is being built next is the other grants, dynamic client registration, SAML 2.0, SCIM and federation.
+Beffroi is 0.x until its 1.0, which ships with Symfony 8.4. Until then the public API may change between minor versions, and only the latest release is supported. It requires PHP 8.4 and Symfony 8.2.
 
-What will never be held back is a protocol feature: SAML and SCIM belong to the open packages exactly as DPoP and the device flow do. What is not open is what *operates* instances rather than what an instance serves: the control plane, with its tenants, master keys, retention, export and observability.
+## Where to find it
+
+- **The code** is one monorepo, [beffroi-auth/beffroi](https://github.com/beffroi-auth/beffroi), where issues and pull requests go. Each package is mirrored, read only, into a repository of its own.
+- **The documentation** is [doc.beffroi.tech](https://doc.beffroi.tech), written in [beffroi-auth/docs](https://github.com/beffroi-auth/docs).
+- **A vulnerability** is reported privately, through the [security advisories](https://github.com/beffroi-auth/beffroi/security/advisories/new) of the monorepo.
 
 ## The name
 
