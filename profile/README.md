@@ -34,8 +34,10 @@ Beffroi is 0.x until its 1.0, which ships with Symfony 8.4. Until then the publi
 
 ## Where to find it
 
+- **The website** is [beffroi.tech](https://beffroi.tech).
 - **The code** is one monorepo, [beffroi-auth/beffroi](https://github.com/beffroi-auth/beffroi), where issues and pull requests go. Each package is mirrored, read only, into a repository of its own.
 - **The documentation** is [doc.beffroi.tech](https://doc.beffroi.tech), written in [beffroi-auth/docs](https://github.com/beffroi-auth/docs).
+- **The accounts** of the project are on [Bluesky](https://bsky.app/profile/beffroi.tech) and [LinkedIn](https://www.linkedin.com/company/beffroi-auth).
 - **A vulnerability** is reported privately, through the [security advisories](https://github.com/beffroi-auth/beffroi/security/advisories/new) of the monorepo.
 
 ## The name
